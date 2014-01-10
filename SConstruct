@@ -16,7 +16,21 @@
 # You should have received a copy of the GNU General Public License
 # along with Emulino.  If not, see <http://www.gnu.org/licenses/>.
 
+# The selection of 'mingw' over 'msvc' must be done first thing. 'msvc' adds
+# a bunch of MSVC-specific env vars that are difficult to remove later.
+
 import os
-env = Environment(ENV = {'PATH' : os.environ['PATH']}, CFLAGS = "-Wall -Werror")
+
+use_tools = ['default']
+if os.name == 'nt':
+	# NT (Windows): scons defaults to MSVC, but emulino code requires GCC, and that means mingw
+	# furthermore, this has no effect:
+	# env.Replace(tools = ['mingw'])
+	# while this does not succeed (because the original 'msvc' env pollutes CFLAGS with custom args)
+	# env = env.Clone(tools = ['mingw'])
+	use_tools = ['mingw']
+
+env = Environment(ENV = os.environ, tools = use_tools, CFLAGS = "-Wall -Werror")
+
 env.Program("emulino", ["emulino.c", "loader.c", "cpu.c", "eeprom.c", "port.c", "timer.c", "usart.c"])
 env.Command("avr.inc", ["mkinst.py", "instructions.txt"], "python mkinst.py")
