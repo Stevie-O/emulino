@@ -37,6 +37,13 @@ typedef int bool;
 
 #define LENGTHOF(x) (sizeof(x) / sizeof((x)[0]))
 
-#define COMPILE_ASSERT(x) extern int __assertion[(x) ? 1 : -1]
+// based on Linux BUILD_BUG_ON macro
+#define COMPILE_ASSERT(e) ((void)sizeof(char[1 - 2*!(e)]))
+
+#ifdef __GNUC__
+#define ATTRIBUTE_UNUSED __attribute__ ((unused))
+#else
+#define ATTRIBUTE_UNUSED
+#endif
 
 #endif // __UTIL_H
