@@ -21,8 +21,12 @@
 #include "usart.h"
 
 #include <stdio.h>
+#ifdef WIN32
+// todo: figure this out
+#else
 #include <sys/select.h>
 #include <unistd.h>
+#endif
 
 #include "cpu.h"
 
@@ -71,7 +75,11 @@ u8 usart_read_udr(u16 addr)
     if (UCSRA & USART_UCSRA_RXC) {
         UCSRA &= ~USART_UCSRA_RXC;
         u8 c;
-        read(input, &c, 1);
+#if WIN32
+		c = 0;
+#else
+		read(input, &c, 1);
+#endif
         return c;
     } else {
         return 0;
@@ -80,21 +88,34 @@ u8 usart_read_udr(u16 addr)
 
 void usart_write_udr(u16 addr, u8 value)
 {
+#if WIN32
+	// TODO: implement this
+#else
     write(output, &value, 1);
+#endif
+}
+
+void usart_set_rxc(u8 value)
+{
+        UCSRA |= USART_UCSRA_RXC;
+        if (UCSRB & USART_UCSRB_RXCIE) {
+            irq(USART_IRQ);
+        }
 }
 
 void usart_poll()
 {
+#if WIN32
+	// TODO: make this work
+#else
     fd_set fds;
     FD_ZERO(&fds);
     FD_SET(input, &fds);
     struct timeval timeout = {0, 0};
     if (select(input+1, &fds, NULL, NULL, &timeout) > 0) {
-        UCSRA |= USART_UCSRA_RXC;
-        if (UCSRB & USART_UCSRB_RXCIE) {
-            irq(USART_IRQ);
-        }
+		usart_set_rxc();
     }
+#endif
 }
 
 void usart_init()
